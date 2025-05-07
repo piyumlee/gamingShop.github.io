@@ -272,12 +272,14 @@ function AddToCart() //fucntion to add items to the cart
         console.log(cartArray);
 
         
-
+        
         
     }
     
-    
+    reloadPage()
 }
+
+
 
 cartItems.addEventListener("click", (event) => {
     const key = event.target.dataset.key;
@@ -289,7 +291,24 @@ cartItems.addEventListener("click", (event) => {
     }
 });
 
+function reloadPage() {
+    let cartData = cartArray.map(key => {
+        let arrayName = getArrayName(key, pageData);
+        let product = pageData[arrayName].find(item => item.id === key);
 
+        return {
+            id: key,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            quantity: quantNum[key]
+        };
+    });
+
+    localStorage.setItem("cartItems", JSON.stringify(cartData));
+    localStorage.setItem("totalPrice", JSON.stringify(totalPrice));
+    localStorage.setItem("cartValue", JSON.stringify(cartVal.innerText));
+}
 
 
 
@@ -354,6 +373,7 @@ function Increase(key) {
     disTotal.innerHTML = "Total: $"+parseFloat(totalPrice,2);
 
     console.log(totalPrice);
+    reloadPage()
 }
 
 function Decrease(key) {
@@ -401,15 +421,44 @@ function Decrease(key) {
 
         
     }
+    reloadPage()
 }
 
 
 let disTotal = document.getElementById("displayTotal");
 
+function reloadCart() {
+    let savedCart = JSON.parse(localStorage.getItem("cartItems")) || [];
+    let savedTotal = JSON.parse(localStorage.getItem("totalPrice")) || 0;
+    let savedCartValue = JSON.parse(localStorage.getItem("cartValue")) || 0;
+
+    cartArray = savedCart.map(item => item.id);
+    quantNum = {};
+    savedCart.forEach(item => quantNum[item.id] = item.quantity);
+
+    totalPrice = savedTotal;
+    cartVal.innerText = savedCartValue;
+    disTotal.innerHTML = "Total: $" + parseFloat(totalPrice, 2);
+
+    savedCart.forEach(product => {
+        cartItems.innerHTML += `
+        <div class="item">
+            <div><img src="${product.image}" id="cartImg"></div>
+            <div><p id="prodName">${product.name}</p></div>
+            <div><p id="cPrice">$${product.price}</p></div>
+            <div class="quantity">
+                <p class="dec" data-key="${product.id}"> - </p>
+                <p class="quantNum" data-key="${product.id}">${product.quantity}</p>
+                <p class="inc" data-key="${product.id}"> + </p>
+            </div>
+        </div>`;
+    });
+}
 
 
 
 
+window.addEventListener("load", reloadCart);
 checkout.addEventListener("click",CheckOut);
 cartI.addEventListener("click",openCart);
 closeT.addEventListener("click",closeCart);
