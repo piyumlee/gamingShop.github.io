@@ -221,7 +221,7 @@ function AddToCart() //fucntion to add items to the cart
         cartVal.innerText = parseInt(cartVal.innerText)+1;
 
         totalPrice += product.price
-        disTotal.innerHTML = "Total: $"+parseFloat(totalPrice,2);
+        disTotal.innerHTML = "Total: $" + totalPrice.toFixed(2);
         console.log(totalPrice);
 
         document.querySelector(`.quantNum[data-key="${key}"]`).innerText = quantNum[key];
@@ -267,7 +267,7 @@ function AddToCart() //fucntion to add items to the cart
         cartVal.innerText = parseInt(cartVal.innerText)+1;
 
         totalPrice += product.price
-        disTotal.innerHTML = "Total: $"+parseFloat(totalPrice,2);
+        disTotal.innerHTML = "Total: $" + totalPrice.toFixed(2);
         console.log(totalPrice);
         console.log(cartArray);
 
@@ -334,26 +334,27 @@ function CheckOut(){
         alert("Cart Empty!");
     }
     else{
-        for (let key of cartArray2)
-        {
-            const arrayName = getArrayName(key, pageData);
-            const product = pageData[arrayName].find(item => item.id === key);
-
-            cartArray2.push
-            ({
-                id:key,
-                name:product.name,
-                price:product.price,
-                quantity:quantNum[key],
-                image:product.image
-            })
-        }
-
-        transfer = encodeURIComponent(JSON.stringify(cartArray2));
+        let cartSummary = cartArray.map(key => {
+            let arrayName = getArrayName(key, pageData);
+            let product = pageData[arrayName].find(item => item.id === key);
+    
+            return {
+                id: key,
+            name: product.name,
+            price: product.price,
+            image: product.image,
+            quantity: quantNum[key] 
+            };
+        });
+    
+        localStorage.setItem("checkoutCart", JSON.stringify(cartSummary));
+        localStorage.setItem("finalTotal", JSON.stringify(totalPrice));
         location.href = "checkOut.html";
     }
     
 }
+
+
 
 
 function Increase(key) {
@@ -370,59 +371,59 @@ function Increase(key) {
     cartVal.innerText = parseInt(cartVal.innerText) + 1;
 
     totalPrice += product.price;
-    disTotal.innerHTML = "Total: $"+parseFloat(totalPrice,2);
+    disTotal.innerHTML = "Total: $" + totalPrice.toFixed(2);
 
     console.log(totalPrice);
     reloadPage()
 }
 
+
+
 function Decrease(key) {
     if (quantNum[key] > 1) {
         quantNum[key] -= 1;
 
-
-        const reduce = document.querySelector(`.quantNum[data-key="${key}"]`);
+        let reduce = document.querySelector(`.quantNum[data-key="${key}"]`);
         if (reduce) {
             reduce.innerText = quantNum[key];
         }
 
-        const arrayName = getArrayName(key, pageData);
+        let arrayName = getArrayName(key, pageData);
         const product = pageData[arrayName].find(item => item.id === key);
 
         cartVal.innerText = parseInt(cartVal.innerText) - 1;
 
+        
         totalPrice -= product.price;
-        disTotal.innerHTML = "Total: $"+parseFloat(totalPrice,2);
+        disTotal.innerHTML = "Total: $" + totalPrice.toFixed(2);
 
-        console.log(totalPrice);
+        console.log(`Decreased price: -$${product.price}, New total: $${totalPrice}`);
     } else {
-       
         let Index = cartArray.indexOf(key);
         if (Index > -1) {
-            cartArray.splice(Index, 1); 
-            
+            cartArray.splice(Index, 1);
         }
 
-        const cartItem = document.querySelector(`.item .quantNum[data-key="${key}"]`).closest(".item");
+        delete quantNum[key];
+
+        let cartItem = document.querySelector(`.item .quantNum[data-key="${key}"]`)?.closest(".item");
         if (cartItem) {
             cartItem.remove();
-            
         }
-        
-        delete quantNum[key];
-        cartVal.innerText = parseInt(cartVal.innerText) - 1;
-        
-        if (cartArray.length == 0)
-            {
-                totalPrice = 0;
-                disTotal.innerHTML = "Total: $"+parseFloat(totalPrice,2);
-                console.log(totalPrice);
-            }
 
-        
+        cartVal.innerText = parseInt(cartVal.innerText) - 1;
+
+        if (cartArray.length === 0) {
+            totalPrice = 0;
+        }
+
+        disTotal.innerHTML = "Total: $" + totalPrice.toFixed(2);
+        console.log("Cart updated, New total:", totalPrice);
     }
-    reloadPage()
+
+    reloadPage(); 
 }
+
 
 
 let disTotal = document.getElementById("displayTotal");
@@ -438,7 +439,7 @@ function reloadCart() {
 
     totalPrice = savedTotal;
     cartVal.innerText = savedCartValue;
-    disTotal.innerHTML = "Total: $" + parseFloat(totalPrice, 2);
+    disTotal.innerHTML = "Total: $" + totalPrice.toFixed(2);
 
     savedCart.forEach(product => {
         cartItems.innerHTML += `
@@ -462,3 +463,39 @@ window.addEventListener("load", reloadCart);
 checkout.addEventListener("click",CheckOut);
 cartI.addEventListener("click",openCart);
 closeT.addEventListener("click",closeCart);
+
+//checkout page js
+
+function PersonalInfo() {
+    let inputs = document.querySelectorAll("input");
+    
+    for (let input of inputs) {
+        if (input.value.trim() === "") {
+            alert("Fill all the fields out!!!");
+            return false;
+        }
+    }
+    return true;
+}
+
+function Finalization()
+{
+    let savedTotal = JSON.parse(localStorage.getItem("finalTotal")) || 0;
+
+
+    alert(`Order placed successfully!\nTotal: $${savedTotal}`);
+
+    localStorage.removeItem("checkoutCart"); 
+    localStorage.removeItem("finalTotal");
+
+    location.href = "shop.html";
+}
+
+document.querySelector(".submitButton").addEventListener("click", function (event) {
+    event.preventDefault(); 
+
+    if (PersonalInfo()) {
+        Finalization();
+    }
+});
+
